@@ -42,6 +42,29 @@ class MLMHead(nn.Module):
         x = self.decoder(x) + self.bias
         return x
 
+class PLACEHead(nn.Module):
+    def __init__(self, config, weight=None):
+        super().__init__()
+        # self.transform = BertPredictionHeadTransform(config)
+         # self.transform = BertPredictionHeadTransform(config)
+        self.fc1 = nn.Linear(config.hidden_size, 256, bias=True)
+        self.ac1 = nn.GELU()
+        self.fc2 = nn.Linear(256, 1, bias=True)
+        # self.ac2 = nn.ReLU()
+        # self.batchnorm = nn.BatchNorm1d()
+        # self.decoder_2 = nn.Linear(64, 1, bias=True)
+        # self.bias = nn.Parameter(torch.zeros(config.vocab_size))
+        if weight is not None:
+            self.decoder.weight = weight
+
+    def forward(self, x):
+        # x = self.transform(x)
+        x = self.fc1(x)
+        x = self.ac1(x)
+        x = self.fc2(x)
+        # x = self.batchnorm(x)
+        # x = self.decoder_2(x)
+        return x
 
 class MPPHead(nn.Module):
     def __init__(self, config):

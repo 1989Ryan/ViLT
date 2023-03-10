@@ -21,8 +21,8 @@ def config():
     exp_name = "vilt"
     seed = 0
     datasets = ["coco", "vg", "sbu", "gcc"]
-    loss_names = _loss_names({"itm": 1, "mlm": 1})
-    batch_size = 4096  # this is a desired batch size; pl trainer will accumulate gradients when per step batch is smaller.
+    loss_names = _loss_names({"place": 1})
+    batch_size = 32  # this is a desired batch size; pl trainer will accumulate gradients when per step batch is smaller.
 
     # Image setting
     train_transform_keys = ["pixelbert"]
@@ -67,13 +67,13 @@ def config():
     # PL Trainer Setting
     resume_from = None
     fast_dev_run = False
-    val_check_interval = 1.0
+    val_check_interval = 3
     test_only = False
 
     # below params varies with the environment
     data_root = ""
     log_dir = "result"
-    per_gpu_batchsize = 0  # you should define this manually with per_gpu_batch_size=#
+    per_gpu_batchsize = 32  # you should define this manually with per_gpu_batch_size=#
     num_gpus = 1
     num_nodes = 1
     load_path = ""

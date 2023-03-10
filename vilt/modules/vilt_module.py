@@ -52,7 +52,9 @@ class ViLTransformerSS(pl.LightningModule):
         if config["loss_names"]["mpp"] > 0:
             self.mpp_score = heads.MPPHead(bert_config)
             self.mpp_score.apply(objectives.init_weights)
-
+        if config["loss_names"]["place"] > 0:
+            self.place_score = heads.PLACEHead(bert_config)
+            self.place_score.apply(objectives.init_weights)
         # ===================== Downstream ===================== #
         if (
             self.hparams.config["load_path"] != ""
@@ -124,6 +126,7 @@ class ViLTransformerSS(pl.LightningModule):
         do_mlm = "_mlm" if mask_text else ""
         text_ids = batch[f"text_ids{do_mlm}"]
         text_labels = batch[f"text_labels{do_mlm}"]
+        place_labels = batch[f"place_labels{do_mlm}"]
         text_masks = batch[f"text_masks"]
         text_embeds = self.text_embeddings(text_ids)
 
@@ -152,14 +155,18 @@ class ViLTransformerSS(pl.LightningModule):
                 torch.full_like(image_masks, image_token_type_idx)
             ),
         )
-
         co_embeds = torch.cat([text_embeds, image_embeds], dim=1)
         co_masks = torch.cat([text_masks, image_masks], dim=1)
 
         x = co_embeds
 
         for i, blk in enumerate(self.transformer.blocks):
+            # if "place" in self.current_tasks and i < 6:
+                # with torch.no_grad():
+                    # x, _attn = blk(x, mask=co_masks)
+            # else:
             x, _attn = blk(x, mask=co_masks)
+
 
         x = self.transformer.norm(x)
         text_feats, image_feats = (
@@ -175,6 +182,8 @@ class ViLTransformerSS(pl.LightningModule):
             "raw_cls_feats": x[:, 0],
             "image_labels": image_labels,
             "image_masks": image_masks,
+            "pick_labels": None,
+            "place_labels" : place_labels,
             "text_labels": text_labels,
             "text_ids": text_ids,
             "text_masks": text_masks,
@@ -212,6 +221,12 @@ class ViLTransformerSS(pl.LightningModule):
         # Image Retrieval and Text Retrieval
         if "irtr" in self.current_tasks:
             ret.update(objectives.compute_irtr(self, batch))
+
+        if "picking" in self.current_tasks:
+            ret.update(objectives.compute_pick(self, batch))
+
+        if "place" in self.current_tasks:
+            ret.update(objectives.compute_placing(self, batch))
 
         return ret
 

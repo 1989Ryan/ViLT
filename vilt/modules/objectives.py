@@ -116,6 +116,81 @@ def compute_mlm(pl_module, batch):
     return ret
 
 
+def get_patch_indices(patch_size, image_size, pixel_coord: torch.Tensor):
+    """
+    Return the index of the patch that each pixel belongs to, given the patch size and image size.
+
+    Args:
+        patch_size (int): the size of each patch
+        image_size (int): the size of the image
+        pixel_coord (torch.Tensor): a tensor of shape (batch_size, 2) representing the pixel coordinates
+
+    Returns:
+        torch.Tensor: a tensor of shape (batch_size,) representing the patch index for each pixel
+    """
+    # batch_size = pixel_coord.shape[0]
+    image_width = image_size
+    num_patches_per_row = image_width // patch_size
+
+    # Compute the row and column index of each pixel
+    row_index = pixel_coord[0] * 384/640
+    col_index = pixel_coord[1] * 384/640
+
+    # Compute the row and column index of the patch that each pixel belongs to
+    patch_row_index = row_index // patch_size
+    patch_col_index = col_index // patch_size
+
+    # Compute the patch index for each pixel
+    patch_index = patch_row_index * num_patches_per_row + patch_col_index
+
+    return patch_index.to(torch.int64)
+
+def index_to_one_hot(patch_index, patches_shape):
+    one_hot = torch.zeros(patches_shape).to("cuda:0")
+    # print(one_hot.size())
+    # print(patch_index.unsqueeze(1).unsqueeze(-1))
+    one_hot.scatter_(1, patch_index.unsqueeze(1).unsqueeze(-1), 1)
+    return one_hot
+
+def compute_picking(pl_module, batch):
+    pass
+
+def compute_placing(pl_module, batch):
+    infer = pl_module.infer(batch, mask_text=False, mask_image=False)
+    # print(infer['image_feats'].size())
+    place_logits = pl_module.place_score(infer["image_feats"])
+    place_labels = infer["place_labels"]
+    # print(place_logits.size())
+    # print(place_logits)
+    patch_labels = get_patch_indices(image_size=384, patch_size=32, pixel_coord = place_labels)
+    patch_onehot_label =index_to_one_hot(patch_labels, place_logits.shape)
+    # print(place_logits.size())
+    # print(patch_onehot_label.size())
+    # place_loss = (-patch_onehot_label.squeeze() \
+    #               * F.log_softmax(place_logits.squeeze(), -1)).sum()
+
+    place_loss = F.cross_entropy(
+        place_logits.squeeze(),
+        patch_onehot_label.squeeze(),
+        ignore_index=-100,
+    )
+
+    ret = {
+        "place_loss": place_loss,
+        "place_logits": place_logits,
+        "place_labels": place_labels,
+    }
+
+    phase = "train" if pl_module.training else "val"
+    loss = getattr(pl_module, f"{phase}_place_loss")(ret["place_loss"])
+    # acc = getattr(pl_module, f"{phase}_place_accuracy")(
+    #     ret["place_logits"], ret["place_labels"]
+    # )
+    pl_module.log(f"place/{phase}/loss", loss)
+    # pl_module.log(f"place/{phase}/accuracy", acc)
+
+    return ret
+
 def compute_mpp(pl_module, batch):
     infer = pl_module.infer(batch, mask_text=False, mask_image=True)
     mpp_logits = pl_module.mpp_score(infer["image_feats"])

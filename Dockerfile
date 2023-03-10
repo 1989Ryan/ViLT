@@ -75,14 +75,14 @@ RUN sudo pip3 install \
    timm==0.5.4\
    ffmpeg \
    opencv-python==4.1.2.30 
-RUN sudo pip3 install torch-scatter torch-sparse -f https://data.pyg.org/whl/torch-1.10.2+cu113.html
-RUN sudo pip3 install torch-geometric
+# RUN sudo pip3 install torch-scatter torch-sparse -f https://data.pyg.org/whl/torch-1.10.2+cu113.html
+# RUN sudo pip3 install torch-geometric
 # RUN sudo pip3 install torch_geometric
 # RUN sudo apt-get install  libpython3-dev
 # RUN sudo pip3 install torch_scatter==2.0.9
-RUN pip3 install -U spacy
-RUN python3 -m spacy download en_core_web_trf
+# RUN pip3 install -U spacy
+# RUN python3 -m spacy download en_core_web_trf
 
 # change ownership of everything to our user
-RUN mkdir /home/$USER_NAME/paragon
-RUN cd /home/$USER_NAME/paragon && echo $(pwd) && chown $USER_NAME:$USER_NAME -R .
+RUN mkdir /home/$USER_NAME/research_paragon
+RUN cd /home/$USER_NAME/research_paragon && echo $(pwd) && chown $USER_NAME:$USER_NAME -R .
