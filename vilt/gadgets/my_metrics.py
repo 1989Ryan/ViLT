@@ -13,9 +13,12 @@ class Accuracy(Metric):
             logits.detach().to(self.correct.device),
             target.detach().to(self.correct.device),
         )
-        preds = logits.argmax(dim=-1)
-        preds = preds[target != -100]
-        target = target[target != -100]
+        preds = logits.squeeze().argmax(dim=-1)
+        target = target.squeeze().argmax(dim=-1)
+        # print(preds.size())
+        # print(target.size())
+        # preds = preds[target != -100]
+        # target = target[target != -100]
         if target.numel() == 0:
             return 1
 

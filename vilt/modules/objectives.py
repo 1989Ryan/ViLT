@@ -191,11 +191,11 @@ def compute_placing(pl_module, batch):
 
     phase = "train" if pl_module.training else "val"
     loss = getattr(pl_module, f"{phase}_place_loss")(ret["place_loss"])
-    # acc = getattr(pl_module, f"{phase}_place_accuracy")(
-    #     ret["place_logits"], ret["place_labels"]
-    # )
+    acc = getattr(pl_module, f"{phase}_place_accuracy")(
+        place_logits, patch_onehot_label,
+    )
     pl_module.log(f"place/{phase}/loss", loss)
-    # pl_module.log(f"place/{phase}/accuracy", acc)
+    pl_module.log(f"place/{phase}/accuracy", acc)
 
     return ret
 
