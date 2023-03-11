@@ -36,16 +36,14 @@ class tabletop_gym_objpick_dataset(torch.utils.data.Dataset):
         # load all image files, sorting them to
         # ensure that they are aligned
         if not test:
-            list_dir_1 = listdir_fullpath(root + '/train_4_obj_nvisii') 
-            list_dir_2 = listdir_fullpath(root + '/train_10_obj_nvisii')
-            list_dir_3 = listdir_fullpath(root + '/train_11_obj_nvisii')
+            # list_dir_1 = listdir_fullpath(root + '/train_4_obj_nvisii_pick') 
+            # list_dir_2 = listdir_fullpath(root + '/train_10_obj_nvisii')
+            list_dir = listdir_fullpath(root + '/train_11_obj_nvisii_pick')
         else:
-            list_dir = listdir_fullpath(root + "/test_11_obj_nvisii") 
+            list_dir = listdir_fullpath(root + "/test_11_obj_nvisii_pick") 
         self.test = test
         if num is not None:
-            paths = random.sample(list_dir_1, int(num)) \
-                + random.sample(list_dir_2, int(num)) \
-                + random.sample(list_dir_3, int(num))
+            paths = random.sample(list_dir, int(num)) 
         else:
             paths = list(sorted(list_dir))
         info_simple = [read_json(os.path.join(ele, "info_simple.json")) for ele in paths]
@@ -82,6 +80,7 @@ class tabletop_gym_objpick_dataset(torch.utils.data.Dataset):
        
         # sample["masks"] = mask
         sample['pick_labels']= t_pixel
+        sample['place_labels']= t_pixel
         # sample['label_place_2'] = info_comp['goal_pixel']
         # sample['bboxes'] = info['bboxes']
         # sample['target_bbox'] = info['target_bbox']
@@ -158,6 +157,7 @@ class tabletop_gym_obj_dataset(torch.utils.data.Dataset):
        
         # sample["masks"] = mask
         sample['place_labels']= info['goal_pixel']
+        sample['pick_labels']= info['goal_pixel']
         # sample['label_place_2'] = info_comp['goal_pixel']
         # sample['bboxes'] = info['bboxes']
         # sample['target_bbox'] = info['target_bbox']

@@ -52,6 +52,9 @@ class ViLTransformerSS(pl.LightningModule):
         if config["loss_names"]["mpp"] > 0:
             self.mpp_score = heads.MPPHead(bert_config)
             self.mpp_score.apply(objectives.init_weights)
+        if config["loss_names"]["pick"] > 0:
+            self.pick_score = heads.PLACEHead(bert_config)
+            self.pick_score.apply(objectives.init_weights)
         if config["loss_names"]["place"] > 0:
             self.place_score = heads.PLACEHead(bert_config)
             self.place_score.apply(objectives.init_weights)
@@ -126,6 +129,7 @@ class ViLTransformerSS(pl.LightningModule):
         do_mlm = "_mlm" if mask_text else ""
         text_ids = batch[f"text_ids{do_mlm}"]
         text_labels = batch[f"text_labels{do_mlm}"]
+        pick_labels = batch[f"pick_labels{do_mlm}"]
         place_labels = batch[f"place_labels{do_mlm}"]
         text_masks = batch[f"text_masks"]
         text_embeds = self.text_embeddings(text_ids)
@@ -182,7 +186,7 @@ class ViLTransformerSS(pl.LightningModule):
             "raw_cls_feats": x[:, 0],
             "image_labels": image_labels,
             "image_masks": image_masks,
-            "pick_labels": None,
+            "pick_labels": pick_labels,
             "place_labels" : place_labels,
             "text_labels": text_labels,
             "text_ids": text_ids,
@@ -222,8 +226,8 @@ class ViLTransformerSS(pl.LightningModule):
         if "irtr" in self.current_tasks:
             ret.update(objectives.compute_irtr(self, batch))
 
-        if "picking" in self.current_tasks:
-            ret.update(objectives.compute_pick(self, batch))
+        if "pick" in self.current_tasks:
+            ret.update(objectives.compute_picking(self, batch))
 
         if "place" in self.current_tasks:
             ret.update(objectives.compute_placing(self, batch))
@@ -234,7 +238,6 @@ class ViLTransformerSS(pl.LightningModule):
         vilt_utils.set_task(self)
         output = self(batch)
         total_loss = sum([v for k, v in output.items() if "loss" in k])
-
         return total_loss
 
     def training_epoch_end(self, outs):

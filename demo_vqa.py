@@ -13,7 +13,7 @@ import ipdb
 
 from PIL import Image
 
-from vilt.config import ex
+from baseline.vilt.vilt.config import ex
 from vilt.modules import ViLTransformerSS
 
 from vilt.transforms import pixelbert_transform

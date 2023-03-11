@@ -11,6 +11,8 @@ def _loss_names(d):
         "vqa": 0,
         "nlvr2": 0,
         "irtr": 0,
+        "place": 0,
+        "pick": 0
     }
     ret.update(d)
     return ret
@@ -21,7 +23,7 @@ def config():
     exp_name = "vilt"
     seed = 0
     datasets = ["coco", "vg", "sbu", "gcc"]
-    loss_names = _loss_names({"place": 1})
+    loss_names = _loss_names({"pick": 1})
     batch_size = 32 # this is a desired batch size; pl trainer will accumulate gradients when per step batch is smaller.
 
     # Image setting
@@ -52,7 +54,7 @@ def config():
 
     # Optimizer Setting
     optim_type = "adamw"
-    learning_rate = 1e-5
+    learning_rate = 1e-4
     weight_decay = 0.01
     decay_power = 1
     max_epoch = 100
@@ -67,7 +69,7 @@ def config():
     # PL Trainer Setting
     resume_from = None
     fast_dev_run = False
-    val_check_interval = 32000//batch_size -1
+    val_check_interval =499
     test_only = False
 
     # below params varies with the environment

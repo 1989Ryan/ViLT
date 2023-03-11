@@ -163,7 +163,7 @@ def index_to_one_hot(patch_index, patches_shape):
 def compute_picking(pl_module, batch):
     infer = pl_module.infer(batch, mask_text=False, mask_image=False)
     # print(infer['image_feats'].size())
-    pick_logits = pl_module.place_score(infer["image_feats"])
+    pick_logits = pl_module.pick_score(infer["image_feats"])
     pick_labels = infer["pick_labels"]
     # print(place_logits.size())
     # print(place_logits)
@@ -173,7 +173,6 @@ def compute_picking(pl_module, batch):
     # print(patch_onehot_label.size())
     pick_loss = (-patch_onehot_label.squeeze() \
                   * F.log_softmax(pick_logits.squeeze(), -1)).mean()
-
     # place_loss = F.cross_entropy(
     #     place_logits.squeeze(),
     #     patch_onehot_label.squeeze(),
@@ -188,11 +187,11 @@ def compute_picking(pl_module, batch):
 
     phase = "train" if pl_module.training else "val"
     loss = getattr(pl_module, f"{phase}_pick_loss")(ret["pick_loss"])
-    acc = getattr(pl_module, f"{phase}_place_accuracy")(
-        ret["place_logits"], ret["place_labels"]
+    acc = getattr(pl_module, f"{phase}_pick_accuracy")(
+        ret["pick_logits"], ret["pick_labels"]
     )
     pl_module.log(f"pick/{phase}/loss", loss)
-    pl_module.log(f"place/{phase}/accuracy", acc)
+    pl_module.log(f"pick/{phase}/accuracy", acc)
 
     return ret
 
