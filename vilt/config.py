@@ -22,7 +22,7 @@ def config():
     seed = 0
     datasets = ["coco", "vg", "sbu", "gcc"]
     loss_names = _loss_names({"place": 1})
-    batch_size = 32  # this is a desired batch size; pl trainer will accumulate gradients when per step batch is smaller.
+    batch_size = 32 # this is a desired batch size; pl trainer will accumulate gradients when per step batch is smaller.
 
     # Image setting
     train_transform_keys = ["pixelbert"]
@@ -52,7 +52,7 @@ def config():
 
     # Optimizer Setting
     optim_type = "adamw"
-    learning_rate = 1e-4
+    learning_rate = 1e-5
     weight_decay = 0.01
     decay_power = 1
     max_epoch = 100
@@ -67,12 +67,12 @@ def config():
     # PL Trainer Setting
     resume_from = None
     fast_dev_run = False
-    val_check_interval = 3
+    val_check_interval = 32000//batch_size -1
     test_only = False
 
     # below params varies with the environment
     data_root = ""
-    log_dir = "result"
+    log_dir = "baseline/vilt/log"
     per_gpu_batchsize = 32  # you should define this manually with per_gpu_batch_size=#
     num_gpus = 1
     num_nodes = 1
@@ -160,7 +160,7 @@ def task_finetune_vqa():
     warmup_steps = 0.1
     draw_false_image = 0
     learning_rate = 1e-4
-    val_check_interval = 0.1
+    val_check_interval = 1000
     lr_mult = 10
 
 

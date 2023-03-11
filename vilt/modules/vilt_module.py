@@ -168,7 +168,7 @@ class ViLTransformerSS(pl.LightningModule):
             x, _attn = blk(x, mask=co_masks)
 
 
-        x = self.transformer.norm(x)
+        # x = self.transformer.norm(x)
         text_feats, image_feats = (
             x[:, : text_embeds.shape[1]],
             x[:, text_embeds.shape[1] :],

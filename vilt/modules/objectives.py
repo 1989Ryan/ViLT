@@ -133,24 +133,32 @@ def get_patch_indices(patch_size, image_size, pixel_coord: torch.Tensor):
     num_patches_per_row = image_width // patch_size
 
     # Compute the row and column index of each pixel
-    row_index = pixel_coord[0] * 384/640
-    col_index = pixel_coord[1] * 384/640
+    row_index = torch.round((pixel_coord[0] - 1) * 384/640)
+    col_index = torch.round((pixel_coord[1] - 1) * 384/640)
+
 
     # Compute the row and column index of the patch that each pixel belongs to
-    patch_row_index = row_index // patch_size
-    patch_col_index = col_index // patch_size
-
+    patch_row_index = torch.div(row_index, patch_size, rounding_mode='trunc') 
+    # // patch_size
+    patch_col_index = torch.div(col_index, patch_size, rounding_mode='trunc') 
+    # col_index // patch_size
+    
+    assert (patch_row_index >= 0).all(), f"Value is {patch_row_index}" 
+    assert (patch_row_index < 12).all(), f"Value is {patch_row_index}" 
+    assert (patch_col_index >= 0).all(), f"Value is {patch_col_index}" 
+    assert (patch_col_index < 12).all(), f"Value is {patch_col_index}"
     # Compute the patch index for each pixel
     patch_index = patch_row_index * num_patches_per_row + patch_col_index
 
     return patch_index.to(torch.int64)
 
 def index_to_one_hot(patch_index, patches_shape):
-    one_hot = torch.zeros(patches_shape).to("cuda:0")
+    one_hot = torch.zeros(patches_shape).cuda()
     # print(one_hot.size())
     # print(patch_index.unsqueeze(1).unsqueeze(-1))
     one_hot.scatter_(1, patch_index.unsqueeze(1).unsqueeze(-1), 1)
     return one_hot
+    
 
 def compute_picking(pl_module, batch):
     pass
@@ -166,14 +174,14 @@ def compute_placing(pl_module, batch):
     patch_onehot_label =index_to_one_hot(patch_labels, place_logits.shape)
     # print(place_logits.size())
     # print(patch_onehot_label.size())
-    # place_loss = (-patch_onehot_label.squeeze() \
-    #               * F.log_softmax(place_logits.squeeze(), -1)).sum()
+    place_loss = (-patch_onehot_label.squeeze() \
+                  * F.log_softmax(place_logits.squeeze(), -1)).mean()
 
-    place_loss = F.cross_entropy(
-        place_logits.squeeze(),
-        patch_onehot_label.squeeze(),
-        ignore_index=-100,
-    )
+    # place_loss = F.cross_entropy(
+    #     place_logits.squeeze(),
+    #     patch_onehot_label.squeeze(),
+    #     # ignore_index=-100,
+    # )
 
     ret = {
         "place_loss": place_loss,

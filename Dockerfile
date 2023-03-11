@@ -55,26 +55,26 @@ RUN apt-get update && apt-get install -y \
 RUN pip3 install --upgrade setuptools wheel
 RUN sudo apt-get install build-essential
 
-RUN sudo pip3 install git+https://github.com/openai/CLIP.git
-RUN sudo pip3 install \
-   gdown \
-   absl-py>=0.7.0  \
-   gym==0.17.3 \
-   pybullet>=3.0.4 \
-   matplotlib>=3.1.1 \
-   scipy==1.4.1 \
-   scikit-image==0.17.2 \
-   transforms3d==0.3.1 \
-   tdqm \
-   hydra-core==1.0.5 \
-   wandb \
-   transformers==4.3.2 \
-   kornia \
-   ftfy \
-   regex \
-   timm==0.5.4\
-   ffmpeg \
-   opencv-python==4.1.2.30 
+# RUN sudo pip3 install git+https://github.com/openai/CLIP.git
+# RUN sudo pip3 install \
+#    gdown \
+#    absl-py>=0.7.0  \
+#    gym==0.17.3 \
+#    pybullet>=3.0.4 \
+#    matplotlib>=3.1.1 \
+#    scipy==1.4.1 \
+#    scikit-image==0.17.2 \
+#    transforms3d==0.3.1 \
+#    tdqm \
+#    hydra-core==1.0.5 \
+#    wandb \
+#    transformers==4.3.2 \
+#    kornia \
+#    ftfy \
+#    regex \
+#    timm==0.5.4\
+#    ffmpeg \
+#    opencv-python==4.1.2.30 
 # RUN sudo pip3 install torch-scatter torch-sparse -f https://data.pyg.org/whl/torch-1.10.2+cu113.html
 # RUN sudo pip3 install torch-geometric
 # RUN sudo pip3 install torch_geometric
@@ -85,4 +85,16 @@ RUN sudo pip3 install \
 
 # change ownership of everything to our user
 RUN mkdir /home/$USER_NAME/research_paragon
+# CMD exec /bin/bash -c "trap : TERM INT; sleep infinity & wait"
 RUN cd /home/$USER_NAME/research_paragon && echo $(pwd) && chown $USER_NAME:$USER_NAME -R .
+RUN pip3 install pytorch_lightning==1.1.4 \
+   transformers==4.2.1\
+   Pillow==8.2.0\
+   tqdm==4.56.0\
+   ipdb==0.13.4\
+   numpy==1.19.5\
+   einops==0.3.0\
+   pyarrow==2.0.0\
+   sacred==0.8.2\
+   pandas==1.1.5\
+   git+https://github.com/rwightman/pytorch-image-models.git

@@ -22,7 +22,7 @@ def main(_config):
         root= "/home/zirui/paraground/dataset", 
         num=8000)
     train_dataloader = torch.utils.data.DataLoader(
-        dataset, batch_size=32, shuffle=True, num_workers=0)
+        dataset, batch_size=_config["batch_size"], shuffle=True, num_workers=0)
     valdataset = tabletop_gym_obj_dataset(
         _config =_config,
         device ="cuda:0",
@@ -30,17 +30,18 @@ def main(_config):
         test = True,
         num=None)
     val_dataloader = torch.utils.data.DataLoader(
-        valdataset, batch_size=32, shuffle=True, num_workers=0)
+        valdataset, batch_size=_config["batch_size"], shuffle=True, num_workers=0)
     model = ViLTransformerSS(_config)
     exp_name = f'{_config["exp_name"]}'
 
     os.makedirs(_config["log_dir"], exist_ok=True)
     checkpoint_callback = pl.callbacks.ModelCheckpoint(
-        save_top_k=1,
+        # save_top_k=1,
+        dirpath='baseline/vilt/pretrained_model',
+        # filename='placing_finetune',
         verbose=True,
-        monitor="val/the_metric",
-        mode="max",
         save_last=True,
+        # save_on_train_epoch_end=True
     )
     # logger = pl.loggers.TensorBoardLogger(
     #     _config["log_dir"],
@@ -66,23 +67,23 @@ def main(_config):
         gpus=_config["num_gpus"],
         num_nodes=_config["num_nodes"],
         precision=_config["precision"],
-        accelerator="ddp",
+        accelerator="cuda",
         benchmark=True,
         deterministic=True,
         max_epochs=_config["max_epoch"] if max_steps is None else 1000,
         max_steps=max_steps,
         callbacks=callbacks,
         logger=wandb_logger,
-        prepare_data_per_node=False,
-        replace_sampler_ddp=False,
-        accumulate_grad_batches=grad_steps,
+        # prepare_data_per_node=False,
+        # replace_sampler_ddp=False,
+        # accumulate_grad_batches=grad_steps,
         log_every_n_steps=10,
-        flush_logs_every_n_steps=10,
-        resume_from_checkpoint=_config["resume_from"],
-        weights_summary="top",
+        # flush_logs_every_n_steps=10,
+        # resume_from_checkpoint=_config["resume_from"],
+        # weights_summary="top",
         fast_dev_run=_config["fast_dev_run"],
         val_check_interval=_config["val_check_interval"],
     )
 
     if not _config["test_only"]:
-        trainer.fit(model, train_dataloader)
+        trainer.fit(model, train_dataloader, val_dataloader)
