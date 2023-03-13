@@ -133,9 +133,12 @@ def get_patch_indices(patch_size, image_size, pixel_coord: torch.Tensor):
     num_patches_per_row = image_width // patch_size
 
     # Compute the row and column index of each pixel
-    row_index = torch.round((pixel_coord[0] - 1) * 384/640)
-    col_index = torch.round((pixel_coord[1] - 1) * 384/640)
-
+    if isinstance(pixel_coord, list):
+        row_index = torch.round((pixel_coord[0] - 1) * 384/640)
+        col_index = torch.round((pixel_coord[1] - 1) * 384/640)
+    else:
+        row_index = torch.round((pixel_coord[:, 0] -1) * 384/640) 
+        col_index = torch.round((pixel_coord[:, 1] -1) * 384/640) 
 
     # Compute the row and column index of the patch that each pixel belongs to
     patch_row_index = torch.div(row_index, patch_size, rounding_mode='trunc') 
@@ -150,7 +153,7 @@ def get_patch_indices(patch_size, image_size, pixel_coord: torch.Tensor):
     # Compute the patch index for each pixel
     patch_index = patch_row_index * num_patches_per_row + patch_col_index
 
-    return patch_index.to(torch.int64)
+    return patch_index.to(torch.int64), torch.cat([patch_row_index.unsqueeze(-1), patch_col_index.unsqueeze(-1)], axis=-1)
 
 def index_to_one_hot(patch_index, patches_shape):
     one_hot = torch.zeros(patches_shape).cuda()
@@ -167,12 +170,17 @@ def compute_picking(pl_module, batch):
     pick_labels = infer["pick_labels"]
     # print(place_logits.size())
     # print(place_logits)
-    patch_labels = get_patch_indices(image_size=384, patch_size=32, pixel_coord = pick_labels)
-    patch_onehot_label =index_to_one_hot(patch_labels, pick_logits.shape)
+    # print(pick_labels)
+    patch_labels, pat = get_patch_indices(image_size=384, patch_size=32, pixel_coord = pick_labels)
+    # print(pat)
+    # print(infer['patch_index'][0])
+    patch_indice = infer['patch_index'][0]
+    patch_onehot_label =torch.eq(patch_indice.to(pl_module.device), pat.unsqueeze(1)).all(-1).int()
+    # patch_onehot_label =index_to_one_hot(patch_labels, pick_logits.shape)
     # print(place_logits.size())
     # print(patch_onehot_label.size())
     pick_loss = (-patch_onehot_label.squeeze() \
-                  * F.log_softmax(pick_logits.squeeze(), -1)).mean()
+                  * F.log_softmax(pick_logits.squeeze()[:, 1:], -1)).mean()
     # place_loss = F.cross_entropy(
     #     place_logits.squeeze(),
     #     patch_onehot_label.squeeze(),
@@ -188,7 +196,7 @@ def compute_picking(pl_module, batch):
     phase = "train" if pl_module.training else "val"
     loss = getattr(pl_module, f"{phase}_pick_loss")(ret["pick_loss"])
     acc = getattr(pl_module, f"{phase}_pick_accuracy")(
-        ret["pick_logits"], ret["pick_labels"]
+        ret["pick_logits"][:, 1:], ret["pick_labels"]
     )
     pl_module.log(f"pick/{phase}/loss", loss)
     pl_module.log(f"pick/{phase}/accuracy", acc)
@@ -202,12 +210,16 @@ def compute_placing(pl_module, batch):
     place_labels = infer["place_labels"]
     # print(place_logits.size())
     # print(place_logits)
-    patch_labels = get_patch_indices(image_size=384, patch_size=32, pixel_coord = place_labels)
-    patch_onehot_label =index_to_one_hot(patch_labels, place_logits.shape)
+    patch_labels, pat = get_patch_indices(image_size=384, patch_size=32, pixel_coord = place_labels)
+    # print(pat)
+    # print(infer['patch_index'][0])
+    patch_indice = infer['patch_index'][0]
+    patch_onehot_label =torch.eq(patch_indice.to("cuda:0"), pat.unsqueeze(1)).all(-1).int()
+    # patch_onehot_label =index_to_one_hot(patch_labels, pick_logits.shape)
     # print(place_logits.size())
     # print(patch_onehot_label.size())
     place_loss = (-patch_onehot_label.squeeze() \
-                  * F.log_softmax(place_logits.squeeze(), -1)).mean()
+                  * F.log_softmax(place_logits.squeeze()[:, 1:], -1)).mean()
 
     # place_loss = F.cross_entropy(
     #     place_logits.squeeze(),
@@ -224,7 +236,7 @@ def compute_placing(pl_module, batch):
     phase = "train" if pl_module.training else "val"
     loss = getattr(pl_module, f"{phase}_place_loss")(ret["place_loss"])
     acc = getattr(pl_module, f"{phase}_place_accuracy")(
-        place_logits, patch_onehot_label,
+        place_logits[:, 1:], patch_onehot_label,
     )
     pl_module.log(f"place/{phase}/loss", loss)
     pl_module.log(f"place/{phase}/accuracy", acc)

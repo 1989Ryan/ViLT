@@ -37,7 +37,7 @@ def main(_config):
     os.makedirs(_config["log_dir"], exist_ok=True)
     checkpoint_callback = pl.callbacks.ModelCheckpoint(
         # save_top_k=1,
-        dirpath='baseline/vilt/pretrained_model',
+        dirpath='baseline/vilt/pick_ckpt',
         # filename='placing_finetune',
         verbose=True,
         save_last=True,

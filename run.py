@@ -18,15 +18,15 @@ def main(_config):
     # dm = MTDataModule(_config, dist=True)
     dataset = tabletop_gym_obj_dataset(
         _config =_config,
-        device ="cuda:0",
-        root= "/home/zirui/paraground/dataset", 
+        device ="cuda:1",
+        root= "/home/zirui/tabletop_gym/dataset", 
         num=8000)
     train_dataloader = torch.utils.data.DataLoader(
         dataset, batch_size=_config["batch_size"], shuffle=True, num_workers=0)
     valdataset = tabletop_gym_obj_dataset(
         _config =_config,
-        device ="cuda:0",
-        root= "/home/zirui/paraground/dataset", 
+        device ="cuda:1",
+        root= "/home/zirui/tabletop_gym/dataset", 
         test = True,
         num=None)
     val_dataloader = torch.utils.data.DataLoader(
@@ -37,7 +37,7 @@ def main(_config):
     os.makedirs(_config["log_dir"], exist_ok=True)
     checkpoint_callback = pl.callbacks.ModelCheckpoint(
         # save_top_k=1,
-        dirpath='baseline/vilt/pretrained_model',
+        dirpath='baseline/vilt/place_ckpt',
         # filename='placing_finetune',
         verbose=True,
         save_last=True,
@@ -64,7 +64,7 @@ def main(_config):
     max_steps = _config["max_steps"] if _config["max_steps"] is not None else None
 
     trainer = pl.Trainer(
-        gpus=_config["num_gpus"],
+        gpus=[1],
         num_nodes=_config["num_nodes"],
         precision=_config["precision"],
         accelerator="cuda",

@@ -136,6 +136,7 @@ class ViLTransformerSS(pl.LightningModule):
 
         if image_embeds is None and image_masks is None:
             img = batch[imgkey][0]
+            # print(img.size())
             (
                 image_embeds,
                 image_masks,
@@ -146,6 +147,7 @@ class ViLTransformerSS(pl.LightningModule):
                 max_image_len=self.hparams.config["max_image_len"],
                 mask_it=mask_image,
             )
+            # print(patch_index)
         else:
             patch_index, image_labels = (
                 None,
